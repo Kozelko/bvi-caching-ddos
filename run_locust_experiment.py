@@ -62,12 +62,12 @@ def set_tuning_params(v_mem="512M", php_max=25):
     subprocess.run(["docker", "compose", "up", "-d"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(3)
 
-def run_locust_test(target_url, csv_name, results_dir, duration, users, spawn_rate):
+def run_locust_test(target_url, csv_name, results_dir, duration, users, spawn_rate, locust_file):
     mode = "S CACHE (Varnish)" if ":8080" in target_url else "BEZ CACHE (Nginx)"
-    print(f"\n[>>>] ZAČÍNAM TEST: {mode}")
+    print(f"\n[>>>] ZAČÍNAM TEST: {mode} (Skript: {locust_file})")
     csv_dir = os.path.join(results_dir, "csv"); os.makedirs(csv_dir, exist_ok=True)
     csv_path = os.path.join(csv_dir, csv_name)
-    cmd = ["locust", "-f", "locustfile.py", "--headless", "-u", str(users), "-r", str(spawn_rate),
+    cmd = ["locust", "-f", locust_file, "--headless", "-u", str(users), "-r", str(spawn_rate),
            "--run-time", duration, "--host", target_url, "--csv", csv_path, "--only-summary"]
     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return f"{csv_path}_stats.csv", f"{csv_path}_stats_history.csv"
@@ -115,14 +115,20 @@ def generate_line_charts(cache_hist, nocache_hist, results_dir, suffix):
     plt.figure(figsize=(10, 5))
     if t_c and r_c: plt.plot(t_c, r_c, label='S Cache', color='green')
     if t_n and r_n: plt.plot(t_n, r_n, label='Bez Cache', color='red', linestyle='--')
-    plt.title(f'Priebeh RPS - {suffix}'); plt.ylabel('RPS'); plt.legend(); plt.grid(True)
+    plt.title(f'Priebeh priepustnosti (RPS) - {suffix}')
+    plt.ylabel('Priepustnosť [počet požiadaviek za sekundu]')
+    plt.xlabel('Čas trvania experimentu [sekundy]')
+    plt.legend(); plt.grid(True)
     plt.savefig(os.path.join(results_dir, 'line_rps.png')); plt.close()
 
     # Latency
     plt.figure(figsize=(10, 5))
     if t_c and p_c: plt.plot(t_c, p_c, label='S Cache', color='green')
     if t_n and p_n: plt.plot(t_n, p_n, label='Bez Cache', color='red', linestyle='--')
-    plt.title(f'Priebeh P95 Odozvy - {suffix}'); plt.ylabel('ms'); plt.yscale('log'); plt.legend(); plt.grid(True)
+    plt.title(f'Priebeh P95 odozvy (Latencia) - {suffix}')
+    plt.ylabel('P95 Latencia odozvy [milisekundy (ms)]')
+    plt.xlabel('Čas trvania experimentu [sekundy]')
+    plt.yscale('log'); plt.legend(); plt.grid(True)
     plt.savefig(os.path.join(results_dir, 'line_lat.png')); plt.close()
 
 def generate_final_report(cache_data, nocache_data, results_dir, suffix, v_metrics, r_metrics, v_mem, php_max):
