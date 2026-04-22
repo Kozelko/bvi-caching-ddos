@@ -1,0 +1,55 @@
+import subprocess
+import os
+import csv
+import datetime
+import matplotlib.pyplot as plt
+import re
+import argparse
+
+def set_tuning_params(v_mem="512M", php_max=25):
+    """Aktualizuje .env súbor a reštartuje kontajnery."""
+    print(f"\n[*] Nastavujem parametre tuningu: Varnish={v_mem}, PHP-FPM={php_max}...")
+    with open(".env", "w") as f:
+        f.write(f"VARNISH_SIZE={v_mem}\n")
+        f.write(f"PHP_MAX_CHILDREN={php_max}\n")
+        f.write(f"PHP_START_SERVERS={int(php_max/5)}\n")
+        f.write(f"PHP_MIN_SPARE={int(php_max/10)}\n")
+        f.write(f"PHP_MAX_SPARE={int(php_max/2.5)}\n")
+    
+    # Reštart prostredia (aplikovanie .env zmien)
+    subprocess.run(["docker", "compose", "up", "-d"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(2) # Počkať, kým sa PHP-FPM inicializuje
+
+# --- OSTATNÉ FUNKCIE (ROVNAKÉ AKO PREDTÝM) ---
+# get_container_stats, get_varnish_metrics, get_redis_metrics...
+# run_locust_test, parse_history, generate_line_charts...
+
+# --- UPRAVENÝ MAIN S ARGUMENTMI PRE TUNING ---
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Automatizovaný Locust benchmark orchestrátor.")
+    parser.add_argument("-u", "--users", type=int, default=200, help="Virtuálni používatelia (default: 200)")
+    parser.add_argument("-r", "--rate", type=int, default=20, help="Spawn rate (default: 20)")
+    parser.add_argument("-t", "--time", type=str, default="1m", help="Doba (default: 1m)")
+    
+    # NOVÉ PARAMETRE TUNINGU
+    parser.add_argument("--vmem", type=str, default="512M", help="Varnish RAM cache (default: 512M)")
+    parser.add_argument("--php", type=int, default=25, help="Počet PHP-FPM procesov (default: 25)")
+    
+    args = parser.parse_args()
+    
+    # Aplikovanie parametrov pred testom
+    import time
+    set_tuning_params(args.vmem, args.php)
+
+    suffix = f"u{args.users}_v{args.vmem}_p{args.php}"
+    results_dir = os.path.join("results", suffix); os.makedirs(results_dir, exist_ok=True)
+
+    # 1. TEST S CACHE
+    s_c, h_c = run_locust_test("http://localhost:8080", "l_cache", results_dir, args.time, args.users, args.rate)
+    v_m = get_varnish_metrics(); r_m = get_redis_metrics()
+    
+    # 2. TEST BEZ CACHE
+    s_n, h_n = run_locust_test("http://localhost:8081", "l_nocache", results_dir, args.time, args.users, args.rate)
+
+    # 3. VYHODNOTENIE (Použitie existujúcich funkcií pre parsovanie a report)
+    # [Tuto si skript doťahá pôvodnú logiku]
