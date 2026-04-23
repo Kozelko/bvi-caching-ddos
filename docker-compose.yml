@@ -4,6 +4,7 @@ services:
   db:
     image: mariadb:10.11
     restart: always
+    command: --slow_query_log=1 --long_query_time=2 --slow_query_log_file=/var/lib/mysql/slow.log --innodb_buffer_pool_size=256M
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: wordpress
@@ -56,9 +57,54 @@ services:
       - "8080:80"
     volumes:
       - ./default.vcl:/etc/varnish/default.vcl:ro
+      - varnish_data:/var/lib/varnish
     environment:
       - VARNISH_SIZE=${VARNISH_SIZE:-512M}
+
+  varnish-exporter:
+    image: jonnenauha/prometheus_varnish_exporter:latest
+    depends_on:
+      - varnish
+    volumes:
+      - varnish_data:/var/lib/varnish:ro
+    restart: always
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    depends_on:
+      - redis
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - varnish-exporter
+      - redis-exporter
+    restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: always
 
 volumes:
   db_data:
   wp_data:
+  varnish_data:
+  prometheus_data:
+  grafana_data:
