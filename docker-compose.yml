@@ -14,7 +14,9 @@ services:
       - db_data:/var/lib/mysql
 
   wordpress:
-    image: wordpress:6-php8.2-fpm
+    build:
+      context: .
+      dockerfile: Dockerfile.wordpress
     depends_on:
       - db
       - redis
@@ -62,7 +64,9 @@ services:
       - VARNISH_SIZE=${VARNISH_SIZE:-512M}
 
   varnish-exporter:
-    image: jonnenauha/prometheus_varnish_exporter:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.exporter
     depends_on:
       - varnish
     volumes:
