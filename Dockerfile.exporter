@@ -1,0 +1,12 @@
+FROM varnish:7.4
+
+USER root
+RUN apt-get update && apt-get install -y wget && \
+    wget https://github.com/jonnenauha/prometheus_varnish_exporter/releases/download/1.6.1/prometheus_varnish_exporter-1.6.1.linux-amd64.tar.gz && \
+    tar -zxf prometheus_varnish_exporter-1.6.1.linux-amd64.tar.gz && \
+    mv prometheus_varnish_exporter-1.6.1.linux-amd64/prometheus_varnish_exporter /usr/local/bin/ && \
+    rm -rf prometheus_varnish_exporter* && \
+    apt-get remove -y wget && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
+USER varnish
+ENTRYPOINT ["prometheus_varnish_exporter"]

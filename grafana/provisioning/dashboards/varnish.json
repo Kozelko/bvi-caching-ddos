@@ -1,0 +1,109 @@
+{
+  "annotations": { "list": [ { "builtIn": 1, "datasource": "Prometheus", "enable": true, "hide": true, "iconColor": "rgba(0, 211, 255, 1)", "name": "Annotations & Alerts", "type": "dashboard" } ] },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }, "unit": "s" } },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "reduceOptions": { "calcs": [ "lastNotNull" ] } },
+      "title": "Varnish Uptime",
+      "type": "stat",
+      "targets": [ { "expr": "varnish_main_uptime{instance=\"varnish-exporter:9131\"}", "refId": "A" } ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 90 } ] }, "unit": "percent" } },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": [ "lastNotNull" ] } },
+      "title": "Hit Ratio (5m)",
+      "type": "stat",
+      "targets": [ { "expr": "100 * (rate(varnish_main_cache_hit{instance=\"varnish-exporter:9131\"}[5m]) / rate(varnish_main_client_req{instance=\"varnish-exporter:9131\"}[5m]))", "refId": "A" } ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "none" } },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "id": 5,
+      "options": { "reduceOptions": { "calcs": [ "lastNotNull" ] } },
+      "title": "Active Threads",
+      "type": "stat",
+      "targets": [ { "expr": "varnish_main_threads{instance=\"varnish-exporter:9131\"}", "refId": "A" } ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] }, "unit": "none" } },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "id": 6,
+      "options": { "reduceOptions": { "calcs": [ "lastNotNull" ] } },
+      "title": "Thread Queue Len",
+      "type": "stat",
+      "targets": [ { "expr": "varnish_main_thread_queue_len{instance=\"varnish-exporter:9131\"}", "refId": "A" } ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "title": "Client Traffic (RPS)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "irate(varnish_main_client_req{instance=\"varnish-exporter:9131\"}[1m])", "legendFormat": "Total Requests", "refId": "A" },
+        { "expr": "irate(varnish_main_cache_hit{instance=\"varnish-exporter:9131\"}[1m])", "legendFormat": "Hits", "refId": "B" },
+        { "expr": "irate(varnish_main_cache_miss{instance=\"varnish-exporter:9131\"}[1m])", "legendFormat": "Misses", "refId": "C" },
+        { "expr": "irate(varnish_main_s_pass{instance=\"varnish-exporter:9131\"}[1m])", "legendFormat": "Pass (Bypass)", "refId": "D" }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 7,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "title": "Backend Traffic (Requests to Nginx)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "irate(varnish_main_backend_req{instance=\"varnish-exporter:9131\"}[1m])", "legendFormat": "Backend Requests", "refId": "A" },
+        { "expr": "irate(varnish_main_backend_fail{instance=\"varnish-exporter:9131\"}[1m])", "legendFormat": "Backend Fails", "refId": "B" }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 4,
+      "title": "Memory Usage (SMA)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "varnish_sma_g_bytes{instance=\"varnish-exporter:9131\"}", "legendFormat": "Used", "refId": "A" },
+        { "expr": "varnish_sma_g_space{instance=\"varnish-exporter:9131\"}", "legendFormat": "Free", "refId": "B" }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 8,
+      "title": "Objects Purging / Expiry",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "irate(varnish_main_n_expired{instance=\"varnish-exporter:9131\"}[1m])", "legendFormat": "Expired", "refId": "A" },
+        { "expr": "irate(varnish_main_n_lru_nuked{instance=\"varnish-exporter:9131\"}[1m])", "legendFormat": "LRU Nuked (OOM)", "refId": "B" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["varnish", "ddos"],
+  "templating": { "list": [] },
+  "time": { "from": "now-15m", "to": "now" },
+  "title": "Varnish - Full Engineering Analysis",
+  "uid": "varnish_full_analysis",
+  "version": 2
+}
